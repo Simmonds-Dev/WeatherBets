@@ -1,106 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="styles.css">
-    <link href="https://unpkg.com/cesium/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
-    <script src="https://unpkg.com/cesium/Build/Cesium/Cesium.js"></script>
-
-    <title>WeatherBets</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://unpkg.com/cesium/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+<title>WeatherBets 🌍</title>
+<link rel="stylesheet" href="styles.css">
+<script src="https://unpkg.com/cesium/Build/Cesium/Cesium.js"></script>
 </head>
-
 <body>
 
-    <hero>
-        <img src="./assets/WeatherBetsHero.png" alt="WeatherBets Hero Image" class="hero-image">
-    </hero>
+<header>
+    <img src="./assets/WeatherBetsHero.png" alt="WeatherBets Hero" class="hero-image">
     <h1>WeatherBets 🌍</h1>
+</header>
 
-    <section class="rules">
-        <h2>How to Play</h2>
-        <ol>
-            <li>Enter player names.</li>
-            <li>Agree on wager amount.</li>
-            <li>Toss coin to decide who picks the city.</li>
-            <li>Spin globe to select a city.</li>
-            <li>Player 1 guesses temperature.</li>
-            <li>Player 2 guesses higher or lower.</li>
-            <li>Closest wins.</li>
-        </ol>
-    </section>
+<section class="rules">
+    <h2>How to Play</h2>
+    <ol>
+        <li>Enter player names and wager.</li>
+        <li>Toss the coin to decide who picks the city.</li>
+        <li>Spin the globe to select a city.</li>
+        <li>Player 1 guesses the temperature.</li>
+        <li>Player 2 guesses higher or lower.</li>
+        <li>Closest wins and gets the emoji!</li>
+    </ol>
+</section>
 
-    <section class="setup step active">
+<section class="setup">
+    <input type="text" id="player1" placeholder="Player 1 Name">
+    <input type="text" id="player2" placeholder="Player 2 Name">
+    <input type="number" id="wager" placeholder="Wager Amount">
+    <button id="startGame">Start Game</button>
+</section>
 
-        <input type="text" id="player1" placeholder="Player 1 name">
-        <input type="text" id="player2" placeholder="Player 2 name">
+<section class="game" style="display:none;">
 
-        <input type="number" id="wager" placeholder="Wager amount">
+    <div class="players-container">
+        <div class="player-column">
+            <h2 id="player1Name"></h2>
+        </div>
+        <div class="player-column">
+            <h2 id="player2Name"></h2>
+        </div>
+    </div>
 
-        <button id="startGame">Start Game</button>
+    <!-- Coin Toss -->
+    <div class="coin-container">
+        <div id="coinChoice">
+            <p id="callerPrompt"></p>
+            <button class="emojiChoice" data-choice="Heads">🔥</button>
+            <button class="emojiChoice" data-choice="Tails">❄️</button>
+        </div>
+        <div id="coin">
+            <div class="coin-face coin-heads">🔥</div>
+            <div class="coin-face coin-tails">❄️</div>
+        </div>
+    </div>
 
-    </section>
+    <!-- Globe -->
+    <div id="globeContainer" style="display:none;">
+        <div id="globe"></div>
+        <button id="spinCity">Spin the Globe</button>
+        <p id="cityDisplay"></p>
+    </div>
 
-    <section class="game">
-
-        <!-- Player Names Side by Side -->
-        <div class="players-container">
-            <div class="player-column" id="player1Column">
-                <h2 id="player1Name"></h2>
-                <div class="player-answers" id="player1Answers"></div>
-            </div>
-            <div class="player-column" id="player2Column">
-                <h2 id="player2Name"></h2>
-                <div class="player-answers" id="player2Answers"></div>
-            </div>
+    <!-- Temperature Guess -->
+    <div id="tempSection" style="display:none;">
+        <div id="player1GuessSection">
+            <p id="tempPrompt"></p>
+            <input type="number" id="tempGuess" placeholder="Enter Temperature Guess In Farenheit">
+            <button id="submitGuess">Submit</button>
         </div>
 
-        <!-- Coin Toss -->
-        <!-- <button id="coinBtn"></button> -->
-        <h2 id="coinResult"></h2>
-        <div class="coin-container">
-            <div id="coinChoice" class="step">
-                <p id="callerPrompt"></p>
-                <button class="emojiChoice" data-choice="Heads">🔥</button>
-                <button class="emojiChoice" data-choice="Tails">❄️</button>
-            </div>
-            <div id="coin" class="coin-front"></div>
+        <div id="player2GuessSection" style="display:none;">
+            <p id="higherLowerPrompt"></p>
+            <button id="higherBtn">Higher 🔼</button>
+            <button id="lowerBtn">Lower 🔽</button>
         </div>
 
-        <!-- Globe -->
-        <div id="globeContainer">
-            <div id="globe"></div>
-            <button id="spinCity">Spin the Globe for a random City</button>
-            <p id="cityDisplay"></p>
-        </div>
+        <p id="finalResult"></p>
+    </div>
 
+</section>
 
-        <div id="tempSection" class="step">
-            <!-- Player 1 Guess -->
-            <div id="player1GuessSection">
-                <p id="tempPrompt"></p>
-                <input type="number" id="tempGuess" placeholder="Enter temperature guess">
-                <button id="submitGuess">Submit Guess</button>
-            </div>
-
-            <!-- Player 2 Guess -->
-            <div id="player2GuessSection" class="hidden-section">
-                <p id="higherLowerPrompt"></p>
-                <button id="higherBtn">Higher 🔼</button>
-                <button id="lowerBtn">Lower 🔽</button>
-            </div>
-
-            <p id="finalResult"></p>
-        </div>
-
-
-    </section>
-
-
-    <script src="script.js"></script>
-
+<script src="script.js"></script>
 </body>
-
-
 </html>
