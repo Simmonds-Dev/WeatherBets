@@ -4,6 +4,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const startBtn = document.getElementById("startGame");
     const setupSection = document.querySelector(".setup");
     const gameSection = document.querySelector(".game");
+    const wagerInput = document.getElementById("wager");
+    const winningsDisplay = document.getElementById("winningsDisplay");
+    const replayBtn = document.getElementById("replayBtn");
+
+    let wagerAmount = 0;
+    let gameLocked = false;
+    let roundWinner = null;
+    let isSpinning = false;
+    let spinInterval = null;
+
 
     const player1Input = document.getElementById("player1");
     const player2Input = document.getElementById("player2");
@@ -32,36 +42,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let viewer, caller, coinWinner, selectedCity, player1Guess, actualTemp;
 
-    const cities = [
-        { name: "Tokyo", lat: 35.6762, lon: 139.6503 },
-        { name: "London", lat: 51.5074, lon: -0.1278 },
-        { name: "New York", lat: 40.7128, lon: -74.0060 },
-        { name: "Paris", lat: 48.8566, lon: 2.3522 },
-        { name: "Sydney", lat: -33.8688, lon: 151.2093 },
-        { name: "Moscow", lat: 55.7558, lon: 37.6173 },
-        { name: "Rio de Janeiro", lat: -22.9068, lon: -43.1729 },
-        { name: "Cairo", lat: 30.0444, lon: 31.2357 },
-        { name: "Mumbai", lat: 19.0760, lon: 72.8777 },
-        { name: "Beijing", lat: 39.9042, lon: 116.4074 },
-        { name: "Los Angeles", lat: 34.0522, lon: -118.2437 },
-        { name: "Berlin", lat: 52.5200, lon: 13.4050 },
-        { name: "Toronto", lat: 43.6532, lon: -79.3832 },
-        { name: "Dubai", lat: 25.2048, lon: 55.2708 },
-        { name: "Singapore", lat: 1.3521, lon: 103.8198 },
-        { name: "Barcelona", lat: 41.3851, lon: 2.1734 },
-        { name: "Rome", lat: 41.9028, lon: 12.4964 },
-        { name: "Seoul", lat: 37.5665, lon: 126.9780 },
-        { name: "Bangkok", lat: 13.7563, lon: 100.5018 },
-        { name: "Istanbul", lat: 41.0082, lon: 28.9784 },
-        { name: "Mexico City", lat: 19.4326, lon: -99.1332 },
-        { name: "Lagos", lat: 6.5244, lon: 3.3792 },
-        { name: "Buenos Aires", lat: -34.6037, lon: -58.3816 },
-    ];
 
     // ---------------- Start Game ----------------
     startBtn.addEventListener("click", () => {
         const p1 = player1Input.value || "Player 1";
         const p2 = player2Input.value || "Player 2";
+        wagerAmount = Number(wagerInput.value) || 0;
+
 
         setupSection.style.display = "none";
         gameSection.style.display = "block";
@@ -120,29 +107,96 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // ---------------- Globe Spin ----------------
-    document.getElementById("spinCity").addEventListener("click", () => {
+    const spinBtn = document.getElementById("spinCity");
+
+    spinBtn.addEventListener("click", () => {
+        if (gameLocked || isSpinning) return;
+
+        isSpinning = true;
+        spinBtn.disabled = true;
+
         const start = Date.now();
-        const spin = setInterval(() => {
+
+        spinInterval = setInterval(() => {
             viewer.camera.rotate(Cesium.Cartesian3.UNIT_Z, 0.05);
+
             if ((Date.now() - start) / 1000 > 3) {
-                clearInterval(spin);
+                clearInterval(spinInterval);
+                spinInterval = null;
                 pickRandomCity();
             }
         }, 16);
     });
 
-    function pickRandomCity() {
-        selectedCity = cities[Math.floor(Math.random() * cities.length)];
 
-        viewer.camera.flyTo({
-            destination: Cesium.Cartesian3.fromDegrees(selectedCity.lon, selectedCity.lat, 3000000),
-            complete: () => {
-                onSpinComplete();
-            }
-        });
 
-        document.getElementById("cityDisplay").textContent = `City: ${selectedCity.name}`;
+
+    function randomCoordinates() {
+        const u = Math.random();
+        const v = Math.random();
+
+        const lat = Math.asin(2 * u - 1) * (180 / Math.PI);
+        const lon = 360 * v - 180;
+
+        return { lat, lon };
     }
+
+    async function pickRandomCity() {
+        const apiKey = "63b77ed365bd0d35dba55f456d174d34";
+        const maxAttempts = 12;
+
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+
+            const { lat, lon } = randomCoordinates();
+
+            try {
+                const res = await fetch(
+                    `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=imperial&appid=${apiKey}`
+                );
+
+                const data = await res.json();
+
+                if (!data.name || !data.main) {
+                    await new Promise(r => setTimeout(r, 200)); // throttle retries
+                    continue;
+                }
+
+                selectedCity = {
+                    name: data.name,
+                    lat,
+                    lon
+                };
+
+                actualTemp = Math.round(data.main.temp); // reuse later!
+
+                viewer.camera.flyTo({
+                    destination: Cesium.Cartesian3.fromDegrees(lon, lat, 3000000),
+                    complete: () => {
+                        isSpinning = false;
+                        spinBtn.disabled = false;
+                        onSpinComplete();
+                    }
+                });
+
+                document.getElementById("cityDisplay").textContent =
+                    `City: ${selectedCity.name}`;
+
+                return;
+
+            } catch (err) {
+                console.error("Retrying random location...");
+                await new Promise(r => setTimeout(r, 200));
+            }
+        }
+
+        // fail-safe cleanup
+        console.error("Could not find city.");
+        isSpinning = false;
+        spinBtn.disabled = false;
+    }
+
+
+
 
     function onSpinComplete() {
         tempSection.style.display = "block";
@@ -154,14 +208,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ---------------- Temperature Phase ----------------
-    submitGuessBtn.addEventListener("click", async () => {
+    submitGuessBtn.addEventListener("click", () => {
+        if (gameLocked) return;
         player1Guess = Number(tempInput.value);
         if (!player1Guess) return alert("Enter a number!");
-
-        const apiKey = "63b77ed365bd0d35dba55f456d174d34";
-        const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${selectedCity.name}&units=imperial&appid=${apiKey}`);
-        const data = await res.json();
-        actualTemp = Math.round(data.main.temp);
 
         player1GuessSection.style.display = "none";
         player2GuessSection.style.display = "block";
@@ -173,17 +223,58 @@ document.addEventListener("DOMContentLoaded", () => {
 
     [higherBtn, lowerBtn].forEach(btn => {
         btn.addEventListener("click", () => {
+            if (gameLocked) return;
+
             const guessHigher = btn.id === "higherBtn";
             const other = coinWinner === "player1" ? "player2" : "player1";
 
-            const player2Correct = (guessHigher && actualTemp > player1Guess) || (!guessHigher && actualTemp < player1Guess);
-            const winner = player2Correct ? other : coinWinner;
-            const winnerName = winner === "player1" ? player1NameEl.textContent : player2NameEl.textContent;
+            const player2Correct =
+                (guessHigher && actualTemp > player1Guess) ||
+                (!guessHigher && actualTemp < player1Guess);
 
-            finalResult.textContent = `Actual: ${actualTemp}°F — Winner: ${winnerName}`;
+            roundWinner = player2Correct ? other : coinWinner;
+
+            const winnerName =
+                roundWinner === "player1"
+                    ? player1NameEl.textContent
+                    : player2NameEl.textContent;
+
+            finalResult.textContent =
+                `Actual: ${actualTemp}°F — Winner: ${winnerName}`;
+
+            winningsDisplay.textContent =
+                `💰 ${winnerName} wins $${wagerAmount}`;
+
+            document.getElementById("roundEnd").style.display = "block";
+
+            gameLocked = true;
             player2GuessSection.style.display = "none";
         });
     });
+
+    replayBtn.addEventListener("click", () => {
+        gameLocked = false;
+        roundWinner = null;
+
+        finalResult.textContent = "";
+        winningsDisplay.textContent = "";
+        document.getElementById("roundEnd").style.display = "none";
+
+        tempSection.style.display = "none";
+        globeContainer.style.display = "none";
+        coinChoiceDiv.style.display = "block";
+
+        // reset coin visuals
+        coinEl.style.transform = "rotateY(0deg)";
+
+        // remove winner coins
+        player1NameEl.querySelectorAll(".winner-coin").forEach(c => c.remove());
+        player2NameEl.querySelectorAll(".winner-coin").forEach(c => c.remove());
+
+        pickCoinCaller();
+    });
+
+
 });
 
 

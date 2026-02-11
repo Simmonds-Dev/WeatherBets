@@ -1,89 +1,100 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link href="https://unpkg.com/cesium/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
-<title>WeatherBets 🌍</title>
-<link rel="stylesheet" href="styles.css">
-<script src="https://unpkg.com/cesium/Build/Cesium/Cesium.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://unpkg.com/cesium/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <title>WeatherBets 🌍</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/cesium/Build/Cesium/Cesium.js"></script>
 </head>
+
 <body>
 
-<header>
-    <img src="./assets/WeatherBetsHero.png" alt="WeatherBets Hero" class="hero-image">
-    <h1>WeatherBets 🌍</h1>
-</header>
+    <header>
+        <img src="./assets/WeatherBetsHero.png" alt="WeatherBets Hero" class="hero-image">
+        <h1>WeatherBets 🌍</h1>
+    </header>
 
-<section class="rules">
-    <h2>How to Play</h2>
-    <ol>
-        <li>Enter player names and wager.</li>
-        <li>Toss the coin to decide who picks the city.</li>
-        <li>Spin the globe to select a city.</li>
-        <li>Player 1 guesses the temperature.</li>
-        <li>Player 2 guesses higher or lower.</li>
-        <li>Closest wins and gets the emoji!</li>
-    </ol>
-</section>
+    <section class="rules">
+        <h2>How to Play</h2>
+        <ol>
+            <li>Enter player names and wager.</li>
+            <li>Toss the coin to decide who picks the city.</li>
+            <li>Spin the globe to select a city.</li>
+            <li>Player 1 guesses the temperature.</li>
+            <li>Player 2 guesses higher or lower.</li>
+            <li>Closest wins and gets the emoji!</li>
+        </ol>
+    </section>
 
-<section class="setup">
-    <input type="text" id="player1" placeholder="Player 1 Name">
-    <input type="text" id="player2" placeholder="Player 2 Name">
-    <input type="number" id="wager" placeholder="Wager Amount">
-    <button id="startGame">Start Game</button>
-</section>
+    <section class="setup">
+        <input type="text" id="player1" placeholder="Player 1 Name">
+        <input type="text" id="player2" placeholder="Player 2 Name">
+        <input type="number" id="wager" placeholder="Wager Amount">
+        <button id="startGame">Start Game</button>
+    </section>
 
-<section class="game" style="display:none;">
+    <section class="game" style="display:none;">
 
-    <div class="players-container">
-        <div class="player-column">
-            <h2 id="player1Name"></h2>
-        </div>
-        <div class="player-column">
-            <h2 id="player2Name"></h2>
-        </div>
-    </div>
-
-    <!-- Coin Toss -->
-    <div class="coin-container">
-        <div id="coinChoice">
-            <p id="callerPrompt"></p>
-            <button class="emojiChoice" data-choice="Heads">🔥</button>
-            <button class="emojiChoice" data-choice="Tails">❄️</button>
-        </div>
-        <div id="coin">
-            <div class="coin-face coin-heads">🔥</div>
-            <div class="coin-face coin-tails">❄️</div>
-        </div>
-    </div>
-
-    <!-- Globe -->
-    <div id="globeContainer" style="display:none;">
-        <div id="globe"></div>
-        <button id="spinCity">Spin the Globe</button>
-        <p id="cityDisplay"></p>
-    </div>
-
-    <!-- Temperature Guess -->
-    <div id="tempSection" style="display:none;">
-        <div id="player1GuessSection">
-            <p id="tempPrompt"></p>
-            <input type="number" id="tempGuess" placeholder="Enter Temperature Guess In Farenheit">
-            <button id="submitGuess">Submit</button>
+        <div class="players-container">
+            <div class="player-column">
+                <h2 id="player1Name"></h2>
+            </div>
+            <div class="player-column">
+                <h2 id="player2Name"></h2>
+            </div>
         </div>
 
-        <div id="player2GuessSection" style="display:none;">
-            <p id="higherLowerPrompt"></p>
-            <button id="higherBtn">Higher 🔼</button>
-            <button id="lowerBtn">Lower 🔽</button>
+        <!-- Coin Toss -->
+        <div class="coin-container">
+            <div id="coinChoice">
+                <p id="callerPrompt"></p>
+                <button class="emojiChoice" data-choice="Heads">🔥</button>
+                <button class="emojiChoice" data-choice="Tails">❄️</button>
+            </div>
+            <div id="coin">
+                <div class="coin-face coin-heads">🔥</div>
+                <div class="coin-face coin-tails">❄️</div>
+            </div>
         </div>
 
-        <p id="finalResult"></p>
-    </div>
+        <!-- Globe -->
+        <div id="globeContainer" style="display:none;">
+            <div id="globe"></div>
+            <button id="spinCity">Spin the Globe</button>
+            <p id="cityDisplay"></p>
+        </div>
 
-</section>
+        <!-- Temperature Guess -->
+        <div id="tempSection" style="display:none;">
+            <div id="player1GuessSection">
+                <p id="tempPrompt"></p>
+                <input type="number" id="tempGuess" placeholder="Enter Temperature Guess In Farenheit">
+                <button id="submitGuess">Submit</button>
+            </div>
 
-<script src="script.js"></script>
+            <div id="player2GuessSection" style="display:none;">
+                <p id="higherLowerPrompt"></p>
+                <button id="higherBtn">Higher 🔼</button>
+                <button id="lowerBtn">Lower 🔽</button>
+            </div>
+
+            <p id="finalResult"></p>
+
+<!-- Changes here! --------------------------------------------------------------------------->
+
+            <div id="roundEnd" style="display:none;">
+                <p id="winningsDisplay"></p>
+                <button id="replayBtn">Replay Wager 🔁</button>
+            </div>
+
+        </div>
+
+    </section>
+
+    <script src="script.js"></script>
 </body>
+
 </html>
